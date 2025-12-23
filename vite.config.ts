@@ -1,19 +1,24 @@
 import { defineConfig } from 'vite'
 import path from 'path'
+import react from '@vitejs/plugin-react'
 
 export default defineConfig({
+  plugins: [react()],
   build: {
     lib: {
-      entry: path.resolve(__dirname, 'src/extension.ts'),
+      entry: {
+        extension: path.resolve(__dirname, 'src/extension.ts'),
+        webview: path.resolve(__dirname, 'src/webview/main.tsx')
+      },
       name: 'ContextBridge',
-      fileName: () => 'extension.js',
       formats: ['es']
     },
     rollupOptions: {
       external: ['vscode'],
       output: {
         dir: 'dist',
-        entryFileNames: 'extension.js',
+        entryFileNames: '[name].js',
+        chunkFileNames: '[name].js',
       }
     },
     outDir: 'dist',
