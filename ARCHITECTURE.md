@@ -279,6 +279,8 @@ npm run package
 - Check logs: `[MTTC Metric] XXXms (Target: <30000ms)`
 - Check validation: `[Validation] User clicked link: Teams`
 
+
+
 ### 4. Acceptable Performance
 - MTTC should be < 30 seconds (typically < 500ms for mock data)
 - Sidebar should render in < 100ms

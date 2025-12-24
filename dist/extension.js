@@ -2,16 +2,8 @@ var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 import * as vscode from "vscode";
-function getContextDatabase() {
-  try {
-    const currentDir = process.cwd();
-    const dbPath = (void 0)(currentDir, "src", "data", "contextDatabase.json");
-    if ((void 0)(dbPath)) ;
-    return [];
-  } catch (error) {
-    console.error("Error loading context database:", error);
-    return [];
-  }
+function getContextDatabase(db) {
+  return [];
 }
 class ContextBridgeStateMachine {
   constructor() {
@@ -188,7 +180,8 @@ class ContextBridgeViewProvider {
     outputChannel.appendLine(`[${(/* @__PURE__ */ new Date()).toISOString()}] ${message}`);
   }
   getHtmlForWebview(webview) {
-    const webviewMainPath = (void 0)(this._extensionUri.fsPath, "dist", "webview.js");
+    const { join } = require("path");
+    const webviewMainPath = join(this._extensionUri.fsPath, "dist", "webview.js");
     webview.asWebviewUri(vscode.Uri.file(webviewMainPath));
     return `<!DOCTYPE html>
       <html lang="en">

@@ -1,5 +1,3 @@
-import * as fs from "fs";
-import * as path from "path";
 import {
   IntentMetadata,
   ContextNugget,
@@ -13,25 +11,47 @@ import {
  * Orchestrates the 4-state MVP flow: Idle → Trigger → Retrieval → Display
  */
 
-// Use dynamic require or read JSON file at runtime
-function getContextDatabase(): ContextNugget[] {
-  try {
-    // Build time: __dirname might not be reliable, so we construct the path
-    const currentDir = process.cwd();
-    const dbPath = path.join(currentDir, 'src', 'data', 'contextDatabase.json');
-    
-    if (fs.existsSync(dbPath)) {
-      const rawData = fs.readFileSync(dbPath, 'utf-8');
-      const parsed = JSON.parse(rawData);
-      return parsed.contexts || [];
-    }
+// Export function to be called from extension.ts (Node context)
+// Webview will receive data via IPC, not directly load from filesystem
+export function getContextDatabase(db?: ContextNugget[]): ContextNugget[] {
+  // If called from extension (Node context), it can pass the loaded database
+  // If called from webview, use embedded fallback
+  return db || [];
+}
 
-    // Fallback: return empty if file not found (will be populated in browser/dev)
-    return [];
-  } catch (error) {
-    console.error('Error loading context database:', error);
-    return [];
-  }
+/**
+ * Compute relevance scores for each context nugget given selection metadata.
+ * Returns the original nugget objects augmented with `calculatedScore`.
+ * This helper is exported so tests can validate scoring/ranking logic.
+ */
+export function computeRelevanceScores(
+  metadata: IntentMetadata,
+  db?: ContextNugget[]
+): Array<ContextNugget & { calculatedScore: number }> {
+  const database = getContextDatabase(db);
+
+  const selectedKeywords = metadata.selectedText
+    .toLowerCase()
+    .split(/\W+/)
+    .filter((w: string) => w.length > 3);
+
+  return database.map((ctx: ContextNugget) => {
+    const keywordMatches = ctx.keywords.filter((kw: string) =>
+      selectedKeywords.some((sk: string) =>
+        kw.toLowerCase().includes(sk) || sk.includes(kw.toLowerCase())
+      )
+    ).length;
+
+    const matchScore = keywordMatches / Math.max(ctx.keywords.length, 1);
+
+    const ctxDate = new Date(ctx.timestamp).getTime();
+    const sixMonthsAgo = Date.now() - 180 * 24 * 60 * 60 * 1000;
+    const recencyScore = ctxDate > sixMonthsAgo ? 1 : 0.5;
+
+    const calculatedScore = matchScore * 0.7 + recencyScore * 0.3;
+
+    return { ...ctx, calculatedScore };
+  });
 }
 
 export class ContextBridgeStateMachine {
@@ -61,47 +81,17 @@ export class ContextBridgeStateMachine {
    * State_Retrieval: Fetch context from mock database with semantic ranking
    */
   static retrieveContextNuggets(
-    metadata: IntentMetadata
+    metadata: IntentMetadata,
+    db?: ContextNugget[]
   ): ContextNugget[] {
     try {
-      const database = getContextDatabase();
+      const scored = computeRelevanceScores(metadata, db || undefined);
 
-      // Extract keywords from selected text (naive tokenization)
-      const selectedKeywords = metadata.selectedText
-        .toLowerCase()
-        .split(/\W+/)
-        .filter((w: string) => w.length > 3);
-
-      // Semantic ranking: keyword match + recency
-      const rankedContexts = database
-        .map((ctx: ContextNugget) => {
-          // Calculate keyword density match
-          const keywordMatches = ctx.keywords.filter((kw: string) =>
-            selectedKeywords.some((sk: string) =>
-              kw.toLowerCase().includes(sk) || sk.includes(kw.toLowerCase())
-            )
-          ).length;
-
-          const matchScore = keywordMatches / Math.max(ctx.keywords.length, 1);
-
-          // Recency score (prioritize last 6 months)
-          const ctxDate = new Date(ctx.timestamp).getTime();
-          const sixMonthsAgo = Date.now() - 180 * 24 * 60 * 60 * 1000;
-          const recencyScore = ctxDate > sixMonthsAgo ? 1 : 0.5;
-
-          // Combined relevance score
-          return {
-            ...ctx,
-            calculatedScore: matchScore * 0.7 + recencyScore * 0.3,
-          };
-        })
-        .filter((ctx: ContextNugget & { calculatedScore: number }) => ctx.calculatedScore > 0)
-        .sort(
-          (a: ContextNugget & { calculatedScore: number }, b: ContextNugget & { calculatedScore: number }) =>
-            b.calculatedScore - a.calculatedScore
-        )
-        .slice(0, 3) // Top 3 results
-        .map(({ calculatedScore, ...ctx }: ContextNugget & { calculatedScore: number }) => ctx);
+      const rankedContexts = scored
+        .filter((ctx) => ctx.calculatedScore > 0)
+        .sort((a, b) => b.calculatedScore - a.calculatedScore)
+        .slice(0, 3)
+        .map(({ calculatedScore, ...ctx }) => ctx as ContextNugget);
 
       return rankedContexts;
     } catch (error) {

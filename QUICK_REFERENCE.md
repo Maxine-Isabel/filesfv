@@ -173,18 +173,6 @@ NuggetCard({ nugget, index, onClick })
 
 ---
 
-## 🧪 Testing Checklist
-
-- [ ] Highlight code with keywords: `API`, `database`, `authentication`
-- [ ] Check sidebar populates with 1-3 nuggets
-- [ ] Verify relevance scores are 85-95%
-- [ ] Click "View Full Context" → link opens in browser
-- [ ] Check Output panel for MTTC metric (should be < 200ms)
-- [ ] Check Output panel for validation log
-- [ ] Press Tab through nugget cards (keyboard nav)
-- [ ] Enable high contrast mode → verify readability
-- [ ] Check that focus indicators are visible
-
 ---
 
 ## 🚀 Build Commands Reference
@@ -327,7 +315,7 @@ In extension dev host (F5), open DevTools (Ctrl+Shift+I):
 
 ---
 
-## 🔮 Future Phase Integration Points
+##  Future Phase Integration Points
 
 ### Phase 2: Live APIs
 ```typescript
@@ -353,32 +341,3 @@ async synthesizeNuggets(nuggets) {
   }));
 }
 ```
-
----
-
-## 📚 References
-
-- [VS Code Extension API](https://code.visualstudio.com/api)
-- [Webview Communication](https://code.visualstudio.com/api/extension-guides/webview)
-- [React Hooks](https://react.dev/reference/react)
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
-- [WCAG 2.1 Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
-
----
-
-## ✅ Quick Verification Checklist
-
-- [ ] `npm install` completes without errors
-- [ ] `npm run build` outputs no TypeScript errors
-- [ ] `dist/extension.js` exists (15+ KB)
-- [ ] `dist/webview.js` exists (1+ MB)
-- [ ] `npm run package` creates .vsix file
-- [ ] Extension installs: `code --install-extension *.vsix`
-- [ ] Highlighting code populates sidebar
-- [ ] Output panel shows MTTC metric
-- [ ] High contrast mode is readable
-- [ ] Keyboard navigation works (Tab → Enter)
-
----
-
-Done! This reference guide should help navigate the codebase quickly.

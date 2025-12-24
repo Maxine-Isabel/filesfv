@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
 import { ContextBridgeStateMachine } from '../stateMachine';
 import { ContextMap, WebviewMessage } from '../types';
 
@@ -89,7 +88,8 @@ export class ContextBridgeViewProvider implements vscode.WebviewViewProvider {
   }
 
   private getHtmlForWebview(webview: vscode.Webview): string {
-    const webviewMainPath = path.join(this._extensionUri.fsPath, 'dist', 'webview.js');
+    const { join } = require('path');
+    const webviewMainPath = join(this._extensionUri.fsPath, 'dist', 'webview.js');
     const mainUri = webview.asWebviewUri(vscode.Uri.file(webviewMainPath));
 
     return `<!DOCTYPE html>
